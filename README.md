@@ -32,5 +32,10 @@ The overall goal is to create a low-cost, non-intrusive prototype that demonstra
 ### 6. Testing and Evaluation
 
 ### 7. Team Members
+Yahya Al-Khateeb
+Osama Abdulghani1
+Oluwakorede Oseni1
+Team Member 4
 
 ### 8. Project Status
+In Progress
