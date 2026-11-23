@@ -66,10 +66,10 @@ microSD card and power supply
 
 #### Software
 
-Raspberry Pi OS 
-Python 3 
-OpenCV - Video
-GPIO library 
+Raspberry Pi OS <br>
+Python 3  <br>
+OpenCV - Video  <br>
+GPIO library  <br>
 
 
 ### 5. Implementation
