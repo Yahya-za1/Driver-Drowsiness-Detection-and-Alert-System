@@ -53,6 +53,25 @@ The system also monitors continuous eye-closure duration. If either the sustaine
 
 ### 4. Hardware and Software Requirements
 
+Components
+
+#### Hardware
+
+Raspberry Pi 4 Model B 
+Camera 
+Buzzer 
+LED and current-limiting resistor 
+Breadboard and jumper wires 
+microSD card and power supply 
+
+#### Software
+
+Raspberry Pi OS 
+Python 3 
+OpenCV - Video
+GPIO library 
+
+
 ### 5. Implementation
 
 ### 6. Testing and Evaluation
