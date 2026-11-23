@@ -61,7 +61,7 @@ The system also monitors continuous eye-closure duration. If either the sustaine
 Yahya Al-Khateeb<br>
 Osama Abdulghani<br>
 Oluwakorede Oseni<br>
-Team Member 4
+Oloto Arni <br>
 
 ### 8. Project Status
 In Progress
