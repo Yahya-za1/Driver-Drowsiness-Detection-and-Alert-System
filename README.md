@@ -57,12 +57,12 @@ Components
 
 #### Hardware
 
-Raspberry Pi 4 Model B 
-Camera 
-Buzzer 
-LED and current-limiting resistor 
-Breadboard and jumper wires 
-microSD card and power supply 
+Raspberry Pi 4 Model B  <br>
+Camera  <br>
+Buzzer  <br>
+LED and current-limiting resistor  <br>
+Breadboard and jumper wires  <br>
+microSD card and power supply  <br>
 
 #### Software
 
