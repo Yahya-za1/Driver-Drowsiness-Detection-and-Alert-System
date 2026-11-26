@@ -53,7 +53,6 @@ The buzzer is switched through an NPN transistor because it draws ~25–30 mA, m
 | `detector_pi.py` | **Main program for the Raspberry Pi** — detection + LED/buzzer alerts + logging |
 | `alert.py` | Alert module: drives the LED and buzzer for levels 0–3 in a background thread |
 | `integration_test.py` | Hardware test: webcam preview, keys `0`–`3` set the alert level |
-| `latency_test.py` | Measures alert response time (level request → GPIO output) |
 | `drowsiness_detector.py` | Original detector for macOS (used during development) |
 | `test_ear.py` | Early EAR-only test script |
 | `train_eye_state_cnn.ipynb` | Training notebook for the alternative CNN eye-state model |
