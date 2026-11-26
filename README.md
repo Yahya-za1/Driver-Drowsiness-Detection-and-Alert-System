@@ -1,86 +1,106 @@
-# Driver-Drowsiness-Detection-and-Alert-System
-Camera-Based Driver Drowsiness Detection and Alert System Using Edge Machine Learning.
+# Driver Drowsiness Detection and Alert System
 
-### 1. Project Overview
+A camera-based driver drowsiness detector running on a Raspberry Pi 4. It tracks the driver's eyes in real time and raises an escalating LED and buzzer alert when signs of drowsiness appear.
 
-Driver drowsiness is a significant road safety concern that can reduce driver attention, reaction time, and overall driving performance.
+---
 
-This project focuses on developing a camera-based Driver Drowsiness Detection and Alert System using edge machine learning. The proposed system monitors driver's eye activity through a camera, processes visual data.
+## How it works
 
-The system uses MediaPipe Face Landmarker to identify facial landmarks around the eyes and calculates the Eye Aspect Ratio (EAR) to estimate whether the driver's eyes are open or closed. It also uses continuous eye-closure duration and Percentage of Eyelid Closure (PERCLOS) to identify patterns associated with drowsiness.
+```
+USB webcam ──► MediaPipe Face Landmarker ──► Eye Aspect Ratio (EAR)
+                                                   │
+                                                   ▼
+                                   Eye-closure duration + PERCLOS
+                                                   │
+                                                   ▼
+                                  Alert level 0–3 ──► Red LED + Buzzer
+```
 
-When the detected eye-closure conditions exceed predefined thresholds, the system generates a warning. The intended hardware implementation uses a Raspberry Pi connected to a camera, buzzer, and LED to provide real-time alerts.
+1. **Capture:** frames from a USB webcam (640×480, MJPG) via OpenCV.
+2. **Landmarks:** MediaPipe Face Landmarker finds six points around each eye.
+3. **Eye state:** the Eye Aspect Ratio (EAR) is computed for both eyes; the eyes count as closed when the average EAR is below `0.20`.
+4. **Drowsiness:** the system tracks how long the eyes stay closed and the **PERCLOS** (percentage of time the eyes were closed over a 20 s window).
+5. **Alert:** the measurements are mapped to an alert level that drives the LED and buzzer.
 
-A Convolutional Neural Network (CNN) based on MobileNetV2 was also developed and evaluated as an alternative eye-state classification approach. However, initial webcam testing showed limitations in its ability to generalize to live camera images. Consequently, the current prototype uses MediaPipe and EAR for real-time eye-state detection.
+### Alert levels
 
-The project aims to develop a system that captures and analyzes eye activity in real time and activates an alert when signs of drowsiness are detected
+| Level | State | Trigger | LED | Buzzer |
+|---|---|---|---|---|
+| 0 | Normal | eyes open, or no face detected | off | off |
+| 1 | Warning | eyes closed ≥ 0.75 s, or PERCLOS ≥ 15% | slow blink (1 Hz) | silent |
+| 2 | Drowsy | eyes closed ≥ 1.5 s, or PERCLOS ≥ 30% | blink (2 Hz) | beep with each blink |
+| 3 | Critical | eyes closed ≥ 3 s | rapid blink (5 Hz) | rapid beeping |
 
-### 2. Project Objectives
-The main objective of this project is to develop a camera-based driver drowsiness detection and alert system using a Raspberry Pi. The system aims to monitor the driver's eye movements and facial features in real time to identify signs of drowsiness and provide immediate warnings through a buzzer and LED.
+---
 
-The specific objectives are to:
-1. Develop a real-time camera-based system to monitor the driver's face and eyes.
-2. Apply computer vision techniques to detect prolonged eye closure and yawning.
-3. Use eye-related measurements, such as the Eye Aspect Ratio (EAR), to identify potential signs of drowsiness.
-4. Implement an alert mechanism using a GPIO-connected buzzer and LED.
-5. Evaluate the system under different conditions, including lighting changes, head movements, normal blinking, and prolonged eye closure.
-6. Assess system performance in terms of detection accuracy, response time, and false alerts.
+## Hardware
 
-The overall goal is to create a low-cost, non-intrusive prototype that demonstrates how edge computing and computer vision can be integrated into a real-time driver monitoring system.
-### 3. System Architecture
+| Component | Pi pin (physical) | GPIO (BCM) | Circuit |
+|---|---|---|---|
+| Red LED | 13 | 27 | GPIO → 220 Ω → LED → GND |
+| Active buzzer | 11 | 17 | GPIO → 1 kΩ → BC547 base; buzzer between 5 V and collector; emitter → GND |
+| 5 V | 2 | — | breadboard (+) rail |
+| GND | 6 | — | breadboard (−) rail |
 
-The proposed system consists of four main components: image acquisition, facial landmark detection, drowsiness analysis, and alert generation.
+The buzzer is switched through an NPN transistor because it draws ~25–30 mA, more than a GPIO pin can safely supply.
 
-## 3.1 Image Acquisition
+---
 
-A camera connected to the Raspberry Pi captures real-time video frames of the driver's face. The frames are processed using OpenCV and prepared for facial landmark detection.
+## Repository structure
 
-## 3.2 Facial Landmark Detection
+| File | Purpose |
+|---|---|
+| `detector_pi.py` | **Main program for the Raspberry Pi** — detection + LED/buzzer alerts + logging |
+| `alert.py` | Alert module: drives the LED and buzzer for levels 0–3 in a background thread |
+| `integration_test.py` | Hardware test: webcam preview, keys `0`–`3` set the alert level |
+| `latency_test.py` | Measures alert response time (level request → GPIO output) |
+| `drowsiness_detector.py` | Original detector for macOS (used during development) |
+| `test_ear.py` | Early EAR-only test script |
+| `train_eye_state_cnn.ipynb` | Training notebook for the alternative CNN eye-state model |
+| `test_cnn_webcam.py`, `compare_cnn_models.py` | CNN webcam test and Keras vs. TFLite comparison |
+| `models/` | `face_landmarker.task` (MediaPipe), trained CNN (`.keras`, `.tflite`) |
+| `requirements.txt` | Python dependencies |
 
-MediaPipe Face Landmarker processes the captured images to identify facial landmarks, including points around both eyes.
+---
 
-These landmarks are used to estimate eyelid opening through the Eye Aspect Ratio (EAR).
+## Running on the Raspberry Pi
 
-## 3.3 Drowsiness Detection
+> **Note:** The Pi 4's CPU has no ARMv8 AES extension, so MediaPipe 1.x crashes on it with an *illegal instruction* error. Use **MediaPipe 0.10.18**, which needs **Python 3.11 or 3.12**. Raspberry Pi OS (Trixie) ships Python 3.13, so create a separate 3.11 environment with `uv`.
 
-The system analyzes eye activity using two measurements:
+```bash
+# 1. Install uv and create a Python 3.11 environment
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.bashrc
+uv venv --python 3.11 ~/dds311
+source ~/dds311/bin/activate
 
-Eye Aspect Ratio (EAR): Estimates whether the driver's eyes are open or closed based on the distances between eye landmarks.
+# 2. Get the code and install dependencies
+git clone https://github.com/Yahya-za1/Driver-Drowsiness-Detection-and-Alert-System.git
+cd Driver-Drowsiness-Detection-and-Alert-System
+uv pip install -r requirements.txt
 
-Percentage of Eyelid Closure (PERCLOS): Estimates the proportion of observed time during which the eyes are classified as closed within a specified time window.
+# 3. Test the LED and buzzer (steps through levels 0–3)
+python alert.py
 
-The system also monitors continuous eye-closure duration. If either the sustained closure duration or PERCLOS exceeds its configured threshold, a drowsiness warning is generated.
+# 4. Run the detector (press Q in the window to quit)
+python detector_pi.py
+```
 
-### 4. Hardware and Software Requirements
+> **Note:** `requirements.txt` also includes the training libraries (e.g. TensorFlow), which the Pi doesn't need. On a laptop with Python 3.13, install the latest `mediapipe` instead of 0.10.18.
 
-Components
+`detector_pi.py` writes `detector_log.csv` with FPS, processing time, EAR, PERCLOS, alert level and alert latency.
 
-#### Hardware
+---
 
-Raspberry Pi 4 Model B  <br>
-Camera  <br>
-Buzzer  <br>
-LED and current-limiting resistor  <br>
-Breadboard and jumper wires  <br>
-microSD card and power supply  <br>
+## Eye-state model: why EAR instead of the CNN
 
-#### Software
+A MobileNetV2 CNN was trained on the CEW dataset (`train_eye_state_cnn.ipynb`) and reached **86.6% test accuracy**. In live webcam tests, however, it did not generalise well to real camera images. The prototype therefore uses MediaPipe landmarks with EAR, which needs no training and works reliably in real time. The trained model is kept in `models/` for reference.
 
-Raspberry Pi OS <br>
-Python 3  <br>
-OpenCV - Video  <br>
-GPIO library  <br>
+---
 
+## Team
 
-### 5. Implementation
-
-### 6. Testing and Evaluation
-
-### 7. Team Members
-Yahya Al-Khateeb<br>
-Osama Abdulghani<br>
-Oluwakorede Oseni<br>
-Oloto Arni <br>
-
-### 8. Project Status
-In Progress
+- Yahya Al-Khateeb
+- Osama Abdulghani
+- Oluwakorede Oseni
+- Oloto Arni

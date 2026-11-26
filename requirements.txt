@@ -1,6 +1,4 @@
-mediapipe
 opencv-python
-numpy
 tensorflow
 scikit-learn
 matplotlib
@@ -8,3 +6,10 @@ pandas
 Pillow
 jupyter
 kaggle
+# Raspberry Pi 4 runtime dependencies — use Python 3.11 or 3.12.
+# MediaPipe 1.x requires ARMv8 AES instructions, which the Pi 4 CPU lacks,
+# so MediaPipe is pinned to 0.10.18 (no Python 3.13 build exists).
+mediapipe==0.10.18
+numpy<2
+gpiozero
+lgpio
